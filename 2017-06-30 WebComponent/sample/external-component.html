@@ -1,0 +1,29 @@
+<template id="template">
+  <style>
+  </style>
+  <div id="time"></div>
+</template>
+
+<script>
+window.customElements.define('external-component', class extends HTMLElement {
+  constructor () {
+    super();
+    this.timer = null;
+  }
+  connectedCallback () {
+    var currentDoc = document.currentScript.ownerDocument;
+    var template = currentDoc.querySelector('#template');
+    var clone = currentDoc.importNode(template.content, true);
+    var shadow = this.attachShadow({mode: 'open'});
+    shadow.appendChild(clone);
+
+    this.timer = setInterval(() => {
+      var date = new Date().toISOString();
+      shadow.querySelector('#time').textContent = date;
+    }, 500);
+  }
+  disconnectedCallback () {
+    clearInterval(this.timer);
+  }
+});
+</script>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<meta charset="UTF-8">
+<title>Sample</title>
+<style>
+  body {
+    margin-bottom: 10rem;
+  }
+  section {
+    border-left: 5px solid #226;
+    padding: 1rem;
+    margin: 2rem 0;
+  }
+  .demo {
+    background: #eee;
+    padding: 1rem;
+  }
+</style>
+
+<h1>Web Component demo page</h1>
+
+<section>
+  <script>
+  class SampleElement extends HTMLElement {
+    constructor() {
+      super();
+      this._countryCode = null;  // 内部用のメンバを初期化
+    }
+
+    // HTML属性値の変更を監視
+    static get observedAttributes() {
+      return ['country'];
+    }
+
+    // HTML属性値が変更されたら呼び出しされる
+    attributeChangedCallback(name, oldValue, newValue) {
+      console.log('change attr!', name, oldValue, newValue, this.country);
+      switch (name) {
+        case 'country':
+          this._countryCode = newValue;
+          this._updateRendering();
+          break;
+      }
+    }
+
+    // コンポーネントが接続されると呼び出しされる
+    connectedCallback() {
+      this._updateRendering();
+    }
+
+    // JSから `elem.country = 'hoge'` として操作するためのAPI
+    get country() {
+      return this._countryCode;
+    }
+    set country(v) {
+      this.setAttribute('country', v);
+    }
+
+    // 接続時・属性変更時にエレメントを更新する
+    _updateRendering() {
+      let str = (this.country || 'null').toUpperCase();
+      this.textContent = `country: ${str}`;
+    }
+  }
+
+  // エレメントの登録
+  window.customElements.define('sample-element', SampleElement);
+  </script>
+
+  <h2>Custom Elements</h2>
+
+
+  <h3>1. simple</h3>
+  <div class="demo">
+    <sample-element></sample-element>
+  </div>
+
+
+  <h3>2. attrs</h3>
+  <div class="demo">
+    <sample-element country="jp"></sample-element>
+  </div>
+</section>
+
+
+<section>
+  <h2>HTML Template</h2>
+  <template id="twitter-template">
+    <h4 class="screen_name"></h4>
+    <div class="description"></div>
+  </template>
+  <div class="demo">
+    <div id="container"></div>
+  </div>
+  <script>
+    (() => {
+      var data = [
+        { screen_name: 'twitter', description: 'official account' },
+        { screen_name: 'scala_lang', description: 'The Scala Programming Language.' },
+      ]
+      var template = document.querySelector('#twitter-template').content;
+
+      for (var account of data) {
+        var clone = template.cloneNode(true);
+        for (var key in account) {
+          clone.querySelector(`.${key}`).textContent = account[key];
+        }
+        document.querySelector('#container').appendChild(clone);
+      }
+    })();
+  </script>
+</section>
+
+
+<section>
+  <h2>Shadow DOM</h2>
+
+  <h3>1. simple</h3>
+  <template id="simple-template">
+    <style>
+      p { color: orange; }
+    </style>
+    <p>pセレクタでスタイルを設定しているけど、影響するのはここだけ</p>
+  </template>
+  <script>
+  class ShadowDomSimple extends HTMLElement {
+    connectedCallback () {
+      var template = document.querySelector('#simple-template');
+      var clone = document.importNode(template.content, true);
+      var shadow = this.attachShadow({mode: 'open'});
+      shadow.appendChild(clone);
+    }
+  }
+
+  window.customElements.define('shadow-dom-simple', ShadowDomSimple);
+  </script>
+
+  <div class="demo">
+    <shadow-dom-simple></shadow-dom-simple>
+    <p>Shadow DOMの外</p>
+  </div>
+
+  <h3>2. slot</h3>
+
+  <template id="slot-template">
+    <h4>Title: <slot name="title"></slot></h4>
+    <div>
+      <slot name="content">default message</slot>
+    </div>
+  </template>
+  <script>
+  class ShadowDomSlot extends HTMLElement {
+    connectedCallback () {
+      var template = document.querySelector('#slot-template');
+      var clone = document.importNode(template.content, true);
+      var shadow = this.attachShadow({mode: 'open'});
+      shadow.appendChild(clone);
+    }
+  }
+
+  window.customElements.define('shadow-dom-slot', ShadowDomSlot);
+  </script>
+
+  <div class="demo">
+    <shadow-dom-slot>
+      <span slot="title"><i>Italic</i> Title</span>
+    </shadow-dom-slot>
+  </div>
+
+  <h3>3. styling</h3>
+
+  <template id="styling-template">
+    <style>
+      div {
+        background: #333;
+      }
+      :host(.warning) div {
+        background: #d66;
+      }
+    </style>
+    <div>hogehoge</div>
+  </template>
+  <script>
+  class ShadowDomStyling extends HTMLElement {
+    connectedCallback () {
+      var template = document.querySelector('#styling-template');
+      var clone = document.importNode(template.content, true);
+      var shadow = this.attachShadow({mode: 'open'});
+      shadow.appendChild(clone);
+    }
+  }
+
+  window.customElements.define('shadow-dom-styling', ShadowDomStyling);
+  </script>
+
+  <style>
+    .demo.styling {
+      color: white;
+      font-family: "ヒラギノ明朝 ProN W6", "HiraMinProN-W6", "HG明朝E", "ＭＳ Ｐ明朝", "MS PMincho", "MS 明朝", serif;
+    }
+  </style>
+  <div class="demo styling">
+    <shadow-dom-styling>
+    </shadow-dom-styling>
+    <shadow-dom-styling class="warning">
+    </shadow-dom-styling>
+  </div>
+
+</section>
+
+
+<section>
+  <h2>HTML Import</h2>
+
+  <link rel="import" href="./external-component.html">
+  <external-component></external-component>
+
+</section>
+
+</html>
